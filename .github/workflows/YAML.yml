@@ -1,7 +1,6 @@
 on:
   push:
     branches: main
-  workflow_dispatch:
 
 jobs:
   import-data:
@@ -14,13 +13,12 @@ jobs:
 	with:
           use-public-rspm: true
 
-      - name: Install packages
-        uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::tidyverse, any::zoo
-
       - name: Check out repository
         uses: actions/checkout@v3
+
+      - name: Install packages
+        run: Rscript -e 'install.packages("tidyverse")'
+
 
       - name: Import data
         run: Rscript -e 'source("./Code.R")'
