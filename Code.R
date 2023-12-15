@@ -1,2 +1,2 @@
-den <- 123
-save(den,file = "Output.RData")
+param <- 1000
+save(param,file = "Output.RData")
