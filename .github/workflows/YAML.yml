@@ -15,7 +15,6 @@ jobs:
           packages: |
             any::tidyverse 
             any::zoo
-	    any::arrow
 
       - name: Check out repository
         uses: actions/checkout@v3
