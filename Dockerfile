@@ -4,7 +4,7 @@ COPY app.R /srv/shiny-server/app.R
 
 COPY shiny-customized.config /etc/shiny-server/shiny-server.conf
 
-COPY Data_for_shiny.RData /etc/shiny-server/Data_for_shiny.RData
+COPY Data_for_shiny.RData /srv/shiny-server/Data_for_shiny.RData
 
 EXPOSE 8080
 
