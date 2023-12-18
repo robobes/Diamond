@@ -36,11 +36,12 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
 
-  load("Data_for_shiny.RData")
-  
+  #load("Data_for_shiny.RData")
+  mydat <- faithful
   output$distPlot <- renderPlot({
         # generate bins based on input$bins from ui.R
-        x    <- mydat$x
+        #x    <- mydat$x
+        x    <- mydat[, 2]
         bins <- seq(min(x), max(x), length.out = input$bins + 1)
 
         # draw the histogram with the specified number of bins
