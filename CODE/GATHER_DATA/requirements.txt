@@ -1,0 +1,4 @@
+datetime
+pandas
+pyarrow
+tefas-crawler == 0.3.4
