@@ -1,6 +1,6 @@
 FROM rocker/shiny
 
-COPY CLOUD/shiny-customized.config /etc/shiny-server/shiny-server.conf
+COPY shiny-customized.config /etc/shiny-server/shiny-server.conf
 
 COPY CODE/app.R /srv/shiny-server/app.R
 
