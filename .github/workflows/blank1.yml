@@ -24,7 +24,7 @@ jobs:
             any::tidyr 
             any::zoo
       - name: Save a file
-        run: Rscript -e 'source("CODE/CALC_ANALYS/Code.R")'
+        run: Rscript -e 'source("CODE/CALC_ANLYS/Code.R")'
       - name: Save a file
         run: Rscript -e 'source("CODE/UPDATE_SHINY/Generate_shiny_data.R")'
       - name: Commit RData file
