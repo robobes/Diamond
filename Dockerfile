@@ -2,9 +2,9 @@ FROM rocker/shiny
 
 COPY CLOUD/shiny-customized.config /etc/shiny-server/shiny-server.conf
 
-COPY CODE/app.R /srv/shiny-server/app.R
+COPY CODE/SHINY/app.R /srv/shiny-server/app.R
 
-COPY DATA/Data_for_shiny.RData /srv/shiny-server/Data_for_shiny.RData
+COPY DATA/SHINY/Data_for_shiny.RData /srv/shiny-server/Data_for_shiny.RData
 
 EXPOSE 8080
 
