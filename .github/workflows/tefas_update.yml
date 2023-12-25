@@ -2,7 +2,7 @@ name: tefas_update
 
 on:
   schedule:
-    - cron: '30 7 * * 1-5' # Every weekday at 10.30 Istanbul
+    - cron: '0 9 * * 1-5' # Every weekday at 10.30 Istanbul
   workflow_dispatch:
 
 jobs:
