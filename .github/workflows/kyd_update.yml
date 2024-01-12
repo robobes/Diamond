@@ -27,7 +27,7 @@ jobs:
       
       - name: setup chrome  
         uses: browser-actions/setup-chrome@latest
-        run: chrome --version
+      - run: chrome --version
 
       - name: execute py script # run main.py
         run: python CODE/GATHER_DATA/gather_kyd.py
