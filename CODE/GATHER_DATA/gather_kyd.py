@@ -11,6 +11,31 @@ import time
 import pyarrow as pa
 import pyarrow.dataset as ds
 
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.utils import ChromeType
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+
+chrome_service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
+
+chrome_options = Options()
+options = [
+    "--headless",
+    "--disable-gpu",
+    "--window-size=1920,1200",
+    "--ignore-certificate-errors",
+    "--disable-extensions",
+    "--no-sandbox",
+    "--disable-dev-shm-usage"
+]
+for option in options:
+    chrome_options.add_argument(option)
+
+
+
+
+
+
 url_list=open("./CODE/GATHER_DATA/kyd_urls.txt").readlines()
 count = 0
 for url in url_list:
@@ -20,7 +45,8 @@ for url in url_list:
 
 
 res = pd.DataFrame(columns=['Ticker', 'Name', 'Date' , 'Value'])
-driver = webdriver.Chrome()
+
+driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
 
 for url in url_list:
     driver.get(url)
