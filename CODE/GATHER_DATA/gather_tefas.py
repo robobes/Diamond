@@ -11,6 +11,7 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 
 
+
 tefas = Crawler()
 table = pa.Table.from_pandas(pd.DataFrame(tefas.fetch(start=datetime.today()-timedelta(days=5),end=datetime.today())))
 ds.write_dataset(table, "./DATA/DATABASE/TEFAS",
