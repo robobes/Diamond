@@ -69,7 +69,7 @@ res['Date']=pd.to_datetime(res['Date']).dt.date
 res["update"]=2
 
 
-dat=ds.dataset("C:/Users/PC/OneDrive/BES_Robo/TRADING_SUITE/RAW_DATA/KYD",partitioning=["Ticker"]).to_table().to_pandas()
+dat=ds.dataset("./DATA/DATABASE/KYD",partitioning=["Ticker"]).to_table().to_pandas()
 dat["update"]=1
 
 dataf=pd.concat([res,dat],ignore_index=True).sort_values('update', ascending=False).drop_duplicates(["Ticker","Date"]).drop(["update"],axis=1)
