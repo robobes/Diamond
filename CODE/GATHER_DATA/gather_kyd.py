@@ -66,7 +66,16 @@ for url in url_list:
 driver.quit()
 
 res['Date']=pd.to_datetime(res['Date']).dt.date
-table = pa.Table.from_pandas(res)
+res["update"]=2
+
+
+dat=ds.dataset("C:/Users/PC/OneDrive/BES_Robo/TRADING_SUITE/RAW_DATA/KYD",partitioning=["Ticker"]).to_table().to_pandas()
+dat["update"]=1
+
+dataf=pd.concat([res,dat],ignore_index=True).sort_values('update', ascending=False).drop_duplicates(["Ticker","Date"]).drop(["update"],axis=1)
+dataf.reset_index().drop("index",axis=1)
+
+table = pa.Table.from_pandas(dataf)
 ds.write_dataset(table, "./DATA/DATABASE/KYD",
                  format="parquet", partitioning=ds.partitioning(
                     pa.schema([table.schema.field("Date")])),existing_data_behavior="overwrite_or_ignore")
