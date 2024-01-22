@@ -78,4 +78,4 @@ dataf.reset_index().drop("index",axis=1)
 table = pa.Table.from_pandas(dataf)
 ds.write_dataset(table, "./DATA/DATABASE/KYD",
                  format="parquet", partitioning=ds.partitioning(
-                    pa.schema([table.schema.field("Date")])),existing_data_behavior="overwrite_or_ignore")
+                    pa.schema([table.schema.field("Ticker")])),existing_data_behavior="overwrite_or_ignore")
