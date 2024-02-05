@@ -24,7 +24,7 @@ df = df.drop(["mon","year"],axis=1)
 
 df["update"]=2
 
-dat = ds.dataset("./DATA/DATABASE/TEFAS",partitioning=["yearmon"])
+dat = ds.dataset("./DATA/DATABASE/TEFAS",partitioning=["yearmon"]).to_table().to_pandas()
 dat["update"]=1
 
 dataf=pd.concat([df,dat],ignore_index=True).sort_values('update', ascending=False).drop_duplicates(["code","date"]).drop(["update"],axis=1)
