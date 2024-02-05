@@ -3,6 +3,7 @@ name: kyd_update
 on:
   schedule:
     - cron: '0 9 * * 1-5' # Every weekday at 10.30 Istanbul
+
   workflow_dispatch:
 
 jobs:
