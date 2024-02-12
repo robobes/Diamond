@@ -61,7 +61,10 @@ for url in url_list:
     name=driver.find_element(by=By.XPATH,value='//h2').text
     ticker=driver.find_element(by=By.XPATH,value='//*[@id="printableArea"]/div/div[2]/div[2]/table/tbody/tr[1]/td[2]').text
     df = pd.DataFrame({'Ticker':ticker, 'Name':name, 'Date': dates, 'Value': values })
-    res=pd.concat([res,df])
+    if res.shape[0] == 0:
+        res=df
+    else:
+        res=pd.concat([res,df])
     
 driver.quit()
 
