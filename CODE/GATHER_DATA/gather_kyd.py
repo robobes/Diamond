@@ -56,8 +56,9 @@ driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
 for url in url_list:
     driver.get(url)
     time.sleep(2)
-    dates = driver.execute_script('return Highcharts.charts[1].series[0].data.map(x => x.series).map(x => x.xData)[0].map(x => new Date(x).toISOString())')
-    values = driver.execute_script('return Highcharts.charts[1].series[0].data.map(x => x.series).map(x => x.yData)[0]')
+    whichchart = driver.execute_script('return Highcharts.charts.length')
+    dates = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(x => x.series).map(x => x.xData)[0].map(x => new Date(x).toISOString())')
+    values = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(x => x.series).map(x => x.yData)[0]')
     name=driver.find_element(by=By.XPATH,value='//h2').text
     ticker=driver.find_element(by=By.XPATH,value='//*[@id="printableArea"]/div/div[2]/div[2]/table/tbody/tr[1]/td[2]').text
     df = pd.DataFrame({'Ticker':ticker, 'Name':name, 'Date': dates, 'Value': values })
