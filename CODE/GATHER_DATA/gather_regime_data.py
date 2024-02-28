@@ -14,7 +14,7 @@ import numpy as np
 #FRED Daily, Quarterly, Monthly
 fred = Fred(api_key='80d221ef8bc4d65b4d93d33df8e3be9e')
 
-monthlytickers= ['CPIAUCSL']
+monthlytickers= ['CPIAUCSL','FEDFUNDS']
 count=0
 for t in monthlytickers:
     data = fred.get_series(t)
@@ -25,7 +25,7 @@ for t in monthlytickers:
         monthlyres=pd.concat([monthlyres,data],axis=1)
     count+=1
 
-qtickers = ["GDPC1"]
+qtickers = ["GDPC1","USRECQ"]
 count=0
 for t in qtickers:
     data = fred.get_series(t)
@@ -120,7 +120,7 @@ for t in dailytickers:
     plt.show()
     
 for t in qtickers:    
-    plt.plot(qres)
+    plt.plot(qres[t])
     plt.title(t)
     plt.show()
     
@@ -168,6 +168,8 @@ def FindTurningPoints(price,threshold_up,threshold_down):
     chunks=pd.DataFrame(chunks)    
 
     return({"Labels":labels,"Chunks":chunks})
+
+### Inflation
 
 def FindTurningPoints_inf(price,threshold_up,threshold_down):
     # Find turning points
@@ -306,6 +308,395 @@ plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "REFLATION
 
 plt.legend()
 plt.show()
+
+
+#### Growth
+
+
+def FindTurningPoints_gro(price,threshold_up,threshold_down):
+    # Find turning points
+    PEAK = 1
+    VALLEY = -1
+    
+    up_thresh = threshold_up
+    down_thresh = threshold_down
+    
+    if down_thresh > 0:
+        raise ValueError('The down_thresh must be negative.')
+        
+    X = price.values
+    initial_pivot = VALLEY if X[0] < X[-1] else PEAK
+    t_n = len(X)
+    pivots = np.zeros(t_n, dtype=np.int_)
+    trend = -initial_pivot
+    last_pivot_t = 0
+    last_pivot_x = X[0]
+
+    pivots[0] = initial_pivot
+
+    for t in range(1, t_n):
+        x = X[t]
+        r = x - last_pivot_x
+
+        if trend == -1:
+            if r >= up_thresh:
+                pivots[last_pivot_t] = trend
+                trend = PEAK
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x < last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+        else:
+            if r <= down_thresh:
+                pivots[last_pivot_t] = trend
+                trend = VALLEY
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x > last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+
+    # Analyze each trend period
+    dates_trend_change=price.index[np.nonzero(pivots)]
+    dates_trend_change = dates_trend_change.append(price.index[-2:-1])
+    pivots2=pd.Series(np.empty(len(pivots)).fill(np.NaN),index=price.index)
+    
+    if pivots[0] == 1 :
+        pivots2.iloc[0]="BOOM"
+    else:
+        pivots2.iloc[0]="RECOVERY"
+    
+    
+    final_pivot_dates=[]
+    for i in range(1,len(dates_trend_change)):
+        dt_start=dates_trend_change[i-1]
+        dt_end=dates_trend_change[i]
+        
+        if i == len(dates_trend_change)-1:
+            final_pivot_dates.append(dt_end)
+        price_chunk=price.loc[dt_start:dt_end]
+        direction= np.sign(price_chunk[-1]-price_chunk[0])
+        
+        
+        if direction > 0:
+            if min(price_chunk) > 0.05:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="BOOM"
+            elif max(price_chunk) < -0.01:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="RECOVERY"
+            elif min(price_chunk) < -0.01:
+                dt_new =  price_chunk[(price_chunk[price_chunk < 0]).index].tail(1).index
+                pivots2[dt_start]="RECOVERY"
+                final_pivot_dates.append(dt_new)
+                pivots2[dt_new]="BOOM"
+            elif min(price_chunk) < 0.02 and max(price_chunk) > 0.05:
+                dt_new = price_chunk[(price_chunk - 0.02) < 0].tail(1).index
+                final_pivot_dates.append(dt_start)
+                final_pivot_dates.append(dt_new)
+                pivots2[dt_start]="RECOVERY"
+                pivots2[dt_new]="BOOM"
+            elif min(price_chunk) > 0.02 and max(price_chunk) > 0.05:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="BOOM"
+            else:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="RECOVERY"
+        elif direction < 0:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="SLUMP"
+                
+    # Labels df
+    labels=pd.DataFrame({"Price":price,"Regime":pivots2.ffill()},index=price.index)
+    
+    return({"Labels":labels})
+
+
+gdp_yoy = qres['GDPC1'].pct_change(4).dropna()
+nber_rec = qres['USRECQ']
+
+
+zz_growth= FindTurningPoints_gro(gdp_yoy, threshold_up=0.01, threshold_down=-0.01)['Labels']
+plotdat = pd.concat([zz_growth,nber_rec],axis=1).dropna()
+plotdat['Regime'] = plotdat['Regime'].where(plotdat["USRECQ"]==0,"RECESSION")
+
+plt.plot(plotdat["Price"])
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "BOOM") / 5),color="red",alpha=0.2,label='BOOM')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "BOOM") / 25),color="red",alpha=0.2)
+
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "RECESSION") / 5),color="blue",alpha=0.2,label='RECESSION')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "RECESSION") / 25),color="blue",alpha=0.2)
+
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "SLUMP") / 5),color="green",alpha=0.2,label='SLUMP')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "SLUMP") / 25),color="green",alpha=0.2)
+
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "RECOVERY") / 5),color="yellow",alpha=0.2,label='RECOVERY')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "RECOVERY") / 25),color="yellow",alpha=0.2)
+
+plt.legend()
+plt.show()
+
+#### Yield Curve
+
+
+
+def FindTurningPoints_yc(level,slope,threshold_up,threshold_down):
+    # Find turning points
+    PEAK = 1
+    VALLEY = -1
+    
+    up_thresh = threshold_up
+    down_thresh = threshold_down
+    
+    if down_thresh > 0:
+        raise ValueError('The down_thresh must be negative.')
+        
+    X = level.values
+    initial_pivot = VALLEY if X[0] < X[-1] else PEAK
+    t_n = len(X)
+    pivots_level = np.zeros(t_n, dtype=np.int_)
+    trend = -initial_pivot
+    last_pivot_t = 0
+    last_pivot_x = X[0]
+
+    pivots_level[0] = initial_pivot
+
+    for t in range(1, t_n):
+        x = X[t]
+        r = x - last_pivot_x
+
+        if trend == -1:
+            if r >= up_thresh:
+                pivots_level[last_pivot_t] = trend
+                trend = PEAK
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x < last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+        else:
+            if r <= down_thresh:
+                pivots_level[last_pivot_t] = trend
+                trend = VALLEY
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x > last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+                
+    X = slope.values
+    initial_pivot = VALLEY if X[0] < X[-1] else PEAK
+    t_n = len(X)
+    pivots_slope = np.zeros(t_n, dtype=np.int_)
+    trend = -initial_pivot
+    last_pivot_t = 0
+    last_pivot_x = X[0]
+
+    pivots_slope[0] = initial_pivot
+
+    for t in range(1, t_n):
+        x = X[t]
+        r = x - last_pivot_x
+
+        if trend == -1:
+            if r >= up_thresh:
+                pivots_slope[last_pivot_t] = trend
+                trend = PEAK
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x < last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+        else:
+            if r <= down_thresh:
+                pivots_slope[last_pivot_t] = trend
+                trend = VALLEY
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x > last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+
+    # Analyze each trend period
+    pivots = abs(pivots_level) + abs(pivots_slope)
+    dates_trend_change=level.index[np.nonzero(pivots)]
+    dates_trend_change = dates_trend_change.append(level.index[-2:-1])
+    pivots2=pd.Series(np.empty(len(pivots)).fill(np.NaN),index=level.index)
+    
+    pivots2[0] = "BULL_STEEP"
+
+    final_pivot_dates=[]
+    for i in range(1,len(dates_trend_change)):
+        dt_start=dates_trend_change[i-1]
+        dt_end=dates_trend_change[i]
+        
+        if i == len(dates_trend_change)-1:
+            final_pivot_dates.append(dt_end)
+        level_chunk=level.loc[dt_start:dt_end]
+        level_direction= np.sign(level_chunk[-1]-level_chunk[0])
+        slope_chunk=slope.loc[dt_start:dt_end]
+        slope_direction= np.sign(slope_chunk[-1]-slope_chunk[0])
+        
+        
+        
+        if level_direction > 0:
+            if slope_direction > 0:
+                pivots2[dt_start]="BEAR_STEEP"
+            else:
+                pivots2[dt_start]="BEAR_FLAT"
+        else:
+            if slope_direction > 0:
+                pivots2[dt_start]="BULL_STEEP"
+            else:
+                pivots2[dt_start]="BULL_FLAT"
+        
+
+    # Labels df
+    labels=pd.DataFrame({"Level":level,'Slope':slope,"Regime":pivots2.ffill()},index=level.index)
+    
+    return({"Labels":labels})
+
+
+YC = dailyres[['DGS10','DGS3MO']].dropna()
+YC = pd.concat([YC,
+           (YC.mean(axis=1)),
+           ((YC["DGS10"] - YC["DGS3MO"])),
+           ((YC["DGS10"] - YC["DGS3MO"]) < 0)],axis=1)
+YC.columns=['DGS10','DGS3MO','level','slope','inverted']
+
+
+zz_yc = FindTurningPoints_yc(level=YC['level'],slope= YC['slope'], threshold_up=1, threshold_down=-1)["Labels"]
+zz_yc['Regime'] = np.where( YC['inverted'],"INVERTED",zz_yc['Regime'])
+
+
+
+plotdat = zz_yc
+
+plt.plot(plotdat["Slope"]/100)
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "INVERTED") / 14),color="maroon",alpha=0.3,label='INVERTED')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "INVERTED") / 40),color="maroon",alpha=0.3)
+
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "BEAR_FLAT") / 14),color="blue",alpha=0.3,label='BEAR_FLAT')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "BEAR_FLAT") / 40),color="blue",alpha=0.3)
+
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "BULL_STEEP") / 14),color="green",alpha=0.3,label='BULL_STEEP')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "BULL_STEEP") / 40),color="green",alpha=0.3)
+
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "BEAR_STEEP") / 14),color="orangered",alpha=0.3,label='BEAR_STEEP')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "BEAR_STEEP") / 40),color="orangered",alpha=0.3)
+
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "BULL_FLAT") / 14),color="yellow",alpha=0.3,label='BULL_FLAT')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "BULL_FLAT") / 40),color="yellow",alpha=0.3)
+plt.legend()
+plt.show()
+
+
+### fed funds
+
+
+
+def FindTurningPoints_fed(price,threshold_up,threshold_down):
+    # Find turning points
+    PEAK = 1
+    VALLEY = -1
+    
+    up_thresh = threshold_up
+    down_thresh = threshold_down
+    
+    if down_thresh > 0:
+        raise ValueError('The down_thresh must be negative.')
+        
+    X = price.values
+    initial_pivot = VALLEY if X[0] < X[-1] else PEAK
+    t_n = len(X)
+    pivots = np.zeros(t_n, dtype=np.int_)
+    trend = -initial_pivot
+    last_pivot_t = 0
+    last_pivot_x = X[0]
+
+    pivots[0] = initial_pivot
+
+    for t in range(1, t_n):
+        x = X[t]
+        r = x - last_pivot_x
+
+        if trend == -1:
+            if r >= up_thresh:
+                pivots[last_pivot_t] = trend
+                trend = PEAK
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x < last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+        else:
+            if r <= down_thresh:
+                pivots[last_pivot_t] = trend
+                trend = VALLEY
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x > last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+
+    # Analyze each trend period
+    dates_trend_change=price.index[np.nonzero(pivots)]
+    dates_trend_change = dates_trend_change.append(price.index[-2:-1])
+    pivots2=pd.Series(np.empty(len(pivots)).fill(np.NaN),index=price.index)
+    
+    if pivots[0] == 1 :
+        pivots2.iloc[0]="TIGHTENING"
+    else:
+        pivots2.iloc[0]="LOOSENING"
+    
+    
+    final_pivot_dates=[]
+    for i in range(1,len(dates_trend_change)):
+        dt_start=dates_trend_change[i-1]
+        dt_end=dates_trend_change[i]
+        
+        if i == len(dates_trend_change)-1:
+            final_pivot_dates.append(dt_end)
+        price_chunk=price.loc[dt_start:dt_end]
+        direction= np.sign(price_chunk[-1]-price_chunk[0])
+        
+        
+        if direction >= 0:
+                pivots2[dt_start]="TIGHTENING"
+            
+        elif direction < 0:
+                
+                pivots2[dt_start]="LOOSENING"
+                
+    # Labels df
+    labels=pd.DataFrame({"Price":price,"Regime":pivots2.ffill()},index=price.index)
+    
+    return({"Labels":labels})
+
+
+fedfunds = monthlyres[['FEDFUNDS','Proxy_funds_rate'] ]
+fedfunds["Rate"] = np.where(np.isnan(fedfunds["Proxy_funds_rate"]),fedfunds['FEDFUNDS'],fedfunds["Proxy_funds_rate"])
+fedfunds = fedfunds["Rate"].dropna()
+
+
+zz_fed = FindTurningPoints_fed(fedfunds, threshold_up=2, threshold_down=-1)
+plotdat = zz_fed['Labels']
+plt.plot(plotdat["Price"]/100)
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "TIGHTENING") / 5),color="maroon",alpha=0.3,label='TIGHTENING')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "TIGHTENING") / 40),color="maroon",alpha=0.3)
+
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "LOOSENING") / 5),color="green",alpha=0.3,label='LOOSENING')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "LOOSENING") / 40),color="green",alpha=0.3)
+plt.legend()
+plt.show()
+
+
+
+
+
+
+
 
 
 
