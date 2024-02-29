@@ -100,74 +100,48 @@ monthlyres = pd.concat([monthlyres,dat_dummy_2],
           axis=1 )
 monthlytickers.append("commodity_curve_Contango")
 
-## PLOTS to check
 
-for t in monthlytickers:    
-    plt.plot(monthlyres[t])
-    plt.title(t)
-    plt.show()
-
-### aqr curve plot
-dummy3 = dat_dummy_2.loc["1925-12-01":]
-plt.fill_between(dummy3.reset_index().date.values, dummy3.reset_index().commodity_curve_Contango.values == 1,color="green")
-plt.fill_between(dummy3.reset_index().date.values, dummy3.reset_index().commodity_curve_Contango.values == -1,color="red")
-plt.show()
-
-
-for t in dailytickers:    
-    plt.plot(dailyres[t])
-    plt.title(t)
-    plt.show()
-    
-for t in qtickers:    
-    plt.plot(qres[t])
-    plt.title(t)
-    plt.show()
-    
     
 #Calculate regimes
 
-
-
-def FindTurningPoints(price,threshold_up,threshold_down):
-    # Find turning points
-    pivots = zz.peak_valley_pivots(price.values, threshold_up, threshold_down)
-    modes = zz.pivots_to_modes(pivots)
-    ts_pivots = pd.Series(price, index=price.index)
-    ts_pivots = ts_pivots[pivots != 0]
-
-    # Label turning points
-    labels_turning_points=pivots.astype(str)
-    labels_turning_points[labels_turning_points=="1"]="ToDownTrend"
-    labels_turning_points[labels_turning_points== "-1"]="ToUpTrend"
-
-    # Label trend direction
-    labels_trend=modes
-   
-    # Labels df
-    labels=pd.DataFrame({"Price":price,"TurningPoints":labels_turning_points,"Trend":labels_trend},index=price.index)
-
-    # Analyze each trend period
-    dates_trend_change=price.index[np.nonzero(pivots)]
-    chunks=[]
-    for i in range(1,len(dates_trend_change)):
-        dt_start=dates_trend_change[i-1]
-        dt_end=dates_trend_change[i]
-        price_chunk=price.loc[dt_start:dt_end]
-        ret_chunk=price_chunk.pct_change().dropna()
-        duration=(dt_end-dt_start)/ np.timedelta64(1, 'D')
-        total_ret=(price_chunk[-1]/price_chunk[0])-1
-        cagr=(price_chunk[-1]/price_chunk[0])**(365/duration)-1
-        direction=np.sign(total_ret)
-        vol=np.std(ret_chunk)
-        dd=price_chunk.div(price_chunk.cummax())-1
-        add=0.75*np.quantile(dd,0.5)+0.25*np.quantile(dd,0.90)
-        chunks.append({"Start":dt_start,"End":dt_end,"Duration":duration,\
-                       "Return":total_ret,"CAGR":cagr,\
-                       "Direction":direction,"Volatility":vol,"AvgDD":add})
-    chunks=pd.DataFrame(chunks)    
-
-    return({"Labels":labels,"Chunks":chunks})
+        # Find turning points
+        pivots = zz.peak_valley_pivots(price.values, threshold_up, threshold_down)
+        modes = zz.pivots_to_modes(pivots)
+        ts_pivots = pd.Series(price, index=price.index)
+        ts_pivots = ts_pivots[pivots != 0]
+    
+        # Label turning points
+        labels_turning_points=pivots.astype(str)
+        labels_turning_points[labels_turning_points=="1"]="ToDownTrend"
+        labels_turning_points[labels_turning_points== "-1"]="ToUpTrend"
+    
+        # Label trend direction
+        labels_trend=modes
+       
+        # Labels df
+        labels=pd.DataFrame({"Price":price,"TurningPoints":labels_turning_points,"Trend":labels_trend},index=price.index)
+    
+        # Analyze each trend period
+        dates_trend_change=price.index[np.nonzero(pivots)]
+        chunks=[]
+        for i in range(1,len(dates_trend_change)):
+            dt_start=dates_trend_change[i-1]
+            dt_end=dates_trend_change[i]
+            price_chunk=price.loc[dt_start:dt_end]
+            ret_chunk=price_chunk.pct_change().dropna()
+            duration=(dt_end-dt_start)/ np.timedelta64(1, 'D')
+            total_ret=(price_chunk[-1]/price_chunk[0])-1
+            cagr=(price_chunk[-1]/price_chunk[0])**(365/duration)-1
+            direction=np.sign(total_ret)
+            vol=np.std(ret_chunk)
+            dd=price_chunk.div(price_chunk.cummax())-1
+            add=0.75*np.quantile(dd,0.5)+0.25*np.quantile(dd,0.90)
+            chunks.append({"Start":dt_start,"End":dt_end,"Duration":duration,\
+                           "Return":total_ret,"CAGR":cagr,\
+                           "Direction":direction,"Volatility":vol,"AvgDD":add})
+        chunks=pd.DataFrame(chunks)    
+    
+        return({"Labels":labels,"Chunks":chunks})
 
 ### Inflation
 
@@ -278,14 +252,11 @@ def FindTurningPoints_inf(price,threshold_up,threshold_down):
                 final_pivot_dates.append(dt_start)
                 pivots2[dt_start]="DISINFLATION"
                 
-    # Labels df
-    labels=pd.DataFrame({"Price":price,"Regime":pivots2.ffill()},index=price.index)
-    
-    return({"Labels":labels})
+    res = pd.concat([price,pivots2.shift(1).ffill()],axis=1).rename(columns={"value": "Price", 0: "Regime"})
 
-#Guide: delete later
-abc = FindTurningPoints(price=dailyres["DGS10"].dropna(),threshold_up=0.1,threshold_down=-0.1)
-pd.melt(pd.DataFrame(abc["Labels"]["Trend"]).reset_index(),id_vars=["index"])
+    
+    return(res)
+
 
 #Inflation regime
 Inf_yoy = monthlyres["CPIAUCSL"].pct_change(12).dropna()
@@ -293,6 +264,11 @@ Inf_yoy = monthlyres["CPIAUCSL"].pct_change(12).dropna()
 
 zz_inf = FindTurningPoints_inf(price=Inf_yoy,threshold_up=0.015,threshold_down=-0.015)
 plotdat = zz_inf["Labels"]
+
+plotdat = pd.merge_asof(pd.DataFrame(index=pd.date_range("1948-01-01",plotdat.index[-1] + pd.Timedelta(days=30), freq="M",inclusive="right")),
+              plotdat,right_index=True,left_index=True)
+
+
 plt.plot(plotdat["Price"])
 plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "FIRE") / 5),color="red",alpha=0.2,label='FIRE')
 plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "FIRE") / 25),color="red",alpha=0.2)
@@ -408,9 +384,10 @@ def FindTurningPoints_gro(price,threshold_up,threshold_down):
                 pivots2[dt_start]="SLUMP"
                 
     # Labels df
-    labels=pd.DataFrame({"Price":price,"Regime":pivots2.ffill()},index=price.index)
+    res = pd.concat([price,pivots2.shift(1).ffill()],axis=1).rename(columns={"value": "Price", 0: "Regime"})
+
     
-    return({"Labels":labels})
+    return(res)
 
 
 gdp_yoy = qres['GDPC1'].pct_change(4).dropna()
@@ -420,6 +397,13 @@ nber_rec = qres['USRECQ']
 zz_growth= FindTurningPoints_gro(gdp_yoy, threshold_up=0.01, threshold_down=-0.01)['Labels']
 plotdat = pd.concat([zz_growth,nber_rec],axis=1).dropna()
 plotdat['Regime'] = plotdat['Regime'].where(plotdat["USRECQ"]==0,"RECESSION")
+
+
+
+plotdat = pd.merge_asof(pd.DataFrame(index=pd.date_range("1948-01-01",plotdat.index[-1] + pd.Timedelta(days=100), freq="Q",inclusive="right")),
+              plotdat,right_index=True,left_index=True)
+
+
 
 plt.plot(plotdat["Price"])
 plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "BOOM") / 5),color="red",alpha=0.2,label='BOOM')
@@ -573,6 +557,8 @@ zz_yc['Regime'] = np.where( YC['inverted'],"INVERTED",zz_yc['Regime'])
 
 plotdat = zz_yc
 
+
+
 plt.plot(plotdat["Slope"]/100)
 plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "INVERTED") / 14),color="maroon",alpha=0.3,label='INVERTED')
 plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "INVERTED") / 40),color="maroon",alpha=0.3)
@@ -643,6 +629,15 @@ def FindTurningPoints_fed(price,threshold_up,threshold_down):
     # Analyze each trend period
     dates_trend_change=price.index[np.nonzero(pivots)]
     dates_trend_change = dates_trend_change.append(price.index[-2:-1])
+    
+    dates_trend_change[[9,10,18,22]]
+    #Exceptions
+    #price.index[706:707]
+    dates_trend_change = dates_trend_change.delete([9,10,18,22])
+    dates_trend_change = dates_trend_change.append(price.index[534:535]).sort_values()
+    dates_trend_change = dates_trend_change.append(price.index[713:714]).sort_values()
+    #
+    
     pivots2=pd.Series(np.empty(len(pivots)).fill(np.NaN),index=price.index)
     
     if pivots[0] == 1 :
@@ -651,13 +646,16 @@ def FindTurningPoints_fed(price,threshold_up,threshold_down):
         pivots2.iloc[0]="LOOSENING"
     
     
-    final_pivot_dates=[]
     for i in range(1,len(dates_trend_change)):
         dt_start=dates_trend_change[i-1]
         dt_end=dates_trend_change[i]
         
-        if i == len(dates_trend_change)-1:
-            final_pivot_dates.append(dt_end)
+        if dt_start == pd.Timestamp('1999-01-01 00:00:00'):
+            pivots2[dt_start]="TIGHTENING"
+            continue
+        if dt_start == pd.Timestamp('2013-12-01 00:00:00'):
+            pivots2[dt_start]="TIGHTENING"
+            continue
         price_chunk=price.loc[dt_start:dt_end]
         direction= np.sign(price_chunk[-1]-price_chunk[0])
         
@@ -680,7 +678,7 @@ fedfunds["Rate"] = np.where(np.isnan(fedfunds["Proxy_funds_rate"]),fedfunds['FED
 fedfunds = fedfunds["Rate"].dropna()
 
 
-zz_fed = FindTurningPoints_fed(fedfunds, threshold_up=2, threshold_down=-1)
+zz_fed = FindTurningPoints_fed(fedfunds, threshold_up=2, threshold_down=-2)
 plotdat = zz_fed['Labels']
 plt.plot(plotdat["Price"]/100)
 plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "TIGHTENING") / 5),color="maroon",alpha=0.3,label='TIGHTENING')
@@ -692,23 +690,168 @@ plt.legend()
 plt.show()
 
 
+price= fedfunds
+
+threshold_up=2
+
+threshold_down=-2
+
+
+## Commodity
+
+plotdat = monthlyres["commodity_curve_Contango"].dropna()
+
+
+plotdat = pd.merge_asof(pd.DataFrame(index=pd.date_range("1877-02-01",plotdat.index[-1] + pd.Timedelta(days=30), freq="M",inclusive="right")),
+              plotdat,right_index=True,left_index=True)
+
+plt.fill_between(plotdat.index, (np.array(plotdat.values == 1) / 5),color="green",alpha=0.3,label='CONTANGO')
+
+plt.fill_between(plotdat.index, (np.array(plotdat.values == -1) / 5),color="maroon",alpha=0.3,label='BACKWARDATION')
+
+plt.legend()
+plt.show()
+
+
+# Turkey EVDS
 
 
 
+def FindTurningPoints_grotr(price,threshold_up,threshold_down):
+    # Find turning points
+    PEAK = 1
+    VALLEY = -1
+    
+    up_thresh = threshold_up
+    down_thresh = threshold_down
+    
+    if down_thresh > 0:
+        raise ValueError('The down_thresh must be negative.')
+        
+    X = price.values
+    initial_pivot = VALLEY if X[0] < X[-1] else PEAK
+    t_n = len(X)
+    pivots = np.zeros(t_n, dtype=np.int_)
+    trend = -initial_pivot
+    last_pivot_t = 0
+    last_pivot_x = X[0]
+
+    pivots[0] = initial_pivot
+
+    for t in range(1, t_n):
+        x = X[t]
+        r = x - last_pivot_x
+
+        if trend == -1:
+            if r >= up_thresh:
+                pivots[last_pivot_t] = trend
+                trend = PEAK
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x < last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+        else:
+            if r <= down_thresh:
+                pivots[last_pivot_t] = trend
+                trend = VALLEY
+                last_pivot_x = x
+                last_pivot_t = t
+            elif x > last_pivot_x:
+                last_pivot_x = x
+                last_pivot_t = t
+
+    # Analyze each trend period
+    dates_trend_change=price.index[np.nonzero(pivots)]
+    dates_trend_change = dates_trend_change.append(price.index[-2:-1])
+    pivots2=pd.Series(np.empty(len(pivots)).fill(np.NaN),index=price.index)
+    
+    if pivots[0] == 1 :
+        pivots2.iloc[0]="BOOM"
+    else:
+        pivots2.iloc[0]="RECOVERY"
+    
+    
+    final_pivot_dates=[]
+    for i in range(1,len(dates_trend_change)):
+        dt_start=dates_trend_change[i-1]
+        dt_end=dates_trend_change[i]
+        
+        if i == len(dates_trend_change)-1:
+            final_pivot_dates.append(dt_end)
+        price_chunk=price.loc[dt_start:dt_end]
+        direction= np.sign(price_chunk[-1]-price_chunk[0])
+        
+        
+        if direction > 0:
+            if min(price_chunk) > 0.08:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="BOOM"
+            elif max(price_chunk) < 0.03:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="RECOVERY"
+            elif min(price_chunk) < 0.03 and max(price_chunk) > 0.08:
+                dt_new =  price_chunk[(price_chunk[(price_chunk - 0.03) < 0]).index].tail(1).index
+                pivots2[dt_start]="RECOVERY"
+                final_pivot_dates.append(dt_new)
+                pivots2[dt_new]="BOOM"
+            elif min(price_chunk) > 0.03 and max(price_chunk) > 0.08:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="BOOM"
+            else:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="RECOVERY"
+        elif direction < 0:
+                final_pivot_dates.append(dt_start)
+                pivots2[dt_start]="SLUMP"
+                
+    # Labels df
+    res = pd.concat([price,pivots2.shift(1).ffill()],axis=1).rename(columns={"value": "Price", 0: "Regime"})
+
+    
+    return(res)
+
+    
+    
+from evds import evdsAPI
+evds_api_key = "gHOEMBlsbI"
+evds = evdsAPI(evds_api_key)
+gdp_tr = evds.get_data(["TP.UR.G23","TP.GSYIH26.HY.ZH"],startdate ="01-01-1987",enddate="01-02-2030",formulas=[0,0])
+gdp_tr.index = pd.to_datetime(gdp_tr["Tarih"]).rename("Date")
+gdp_tr = gdp_tr.drop(["Tarih"],axis=1).pct_change(4)
+gdp_tr['value'] = np.where(np.isnan(gdp_tr["TP_GSYIH26_HY_ZH"]),gdp_tr['TP_UR_G23'],gdp_tr['TP_GSYIH26_HY_ZH'])
+gdp_tr = gdp_tr['value'].dropna()
 
 
 
+plotdat = FindTurningPoints_grotr(gdp_tr, threshold_up=0.03, threshold_down=-0.03).dropna()
+
+
+recessiondates = pd.to_datetime(["1988-Q4",	"1989-Q1",	"1994-Q2",	"1994-Q3",		"1998-Q4",	"1999-Q1",	"1999-Q2",
+                                 "2001-Q2",	"2001-Q3",	"2001-Q4",	"2008-Q3",	"2008-Q4",	"2009-Q1",	"2018-Q3",	"2018-Q4",	"2019-Q1",	"2020-Q2"])
+plotdat = plotdat.merge(pd.DataFrame({"value":1},index=recessiondates),how='left',left_index=True,right_index=True)
+plotdat['Regime'] = np.where(np.isnan(plotdat['value']),plotdat['Regime'],"RECESSION")
+
+
+plotdat = pd.merge_asof(pd.DataFrame(index=pd.date_range("1988-04-01",pd.Timestamp.now(), freq="Q")),
+              plotdat,right_index=True,left_index=True).drop(columns=["value"])
 
 
 
+plt.plot(plotdat["Price"])
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "BOOM") / 5),color="red",alpha=0.2,label='BOOM')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "BOOM") / 25),color="red",alpha=0.2)
 
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "RECESSION") / 5),color="blue",alpha=0.2,label='RECESSION')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "RECESSION") / 25),color="blue",alpha=0.2)
 
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "SLUMP") / 5),color="green",alpha=0.2,label='SLUMP')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "SLUMP") / 25),color="green",alpha=0.2)
 
+plt.fill_between(plotdat.index, (np.array(plotdat.Regime.values == "RECOVERY") / 5),color="yellow",alpha=0.2,label='RECOVERY')
+plt.fill_between(plotdat.index, -1*(np.array(plotdat.Regime.values == "RECOVERY") / 25),color="yellow",alpha=0.2)
 
-
-
-
-
-
+plt.legend()
+plt.show()
 
 
