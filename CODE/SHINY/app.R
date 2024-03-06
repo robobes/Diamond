@@ -9,6 +9,7 @@
 
 library(shiny)
 library(ggplot2)
+library(plotly)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -30,7 +31,7 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("distPlot"),
+           plotlyOutput("distPlot"),
            plotOutput("scatterPlot")
         )
     )
@@ -38,23 +39,22 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  #load("~/Github/Diamond/DATA/SHINY/Data_for_shiny.RData")
-  load("/srv/shiny-server/Data_for_shiny.RData")
+  load("~/Github/Diamond/DATA/SHINY/Data_for_shiny.RData")
+  #load("/srv/shiny-server/Data_for_shiny.RData")
   plotdat <-reactive(get(paste0("plotdat_",input$whichplot,"_us")))
   colvalues <- reactive(get(paste0("colorpalette_",input$whichplot)))
-  output$distPlot <- renderPlot({
-        
-
-        
-        ggplot(plotdat(), aes(x = Date, y = Value)) +
-          geom_tile(aes(x = Date, y = (max(Value)+min(Value))/2, height = max(Value)-min(Value),width=180, fill = Regime, alpha = 0.002)) +
+  output$distPlot <- renderPlotly({
+        p <- ggplot(plotdat(), aes(x = Date, y = Value)) +
+          geom_tile(aes(x = Date, y = (max(Value)+min(Value))/2, height = max(Value)-min(Value),width=90, fill = Regime,color=Regime), alpha = 0.5) +
           geom_hline(aes(yintercept=0),col="maroon4")+
           geom_line() +
           scale_fill_manual(values = colvalues())+
+          scale_color_manual(values = colvalues())+
           labs(x = "Date", y = "Value", title = "Value Over Time by Regime") +
           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
                 panel.background = element_blank())+
-          guides(alpha = FALSE,colour=FALSE)
+          guides(alpha = "none",colour="none")
+        ggplotly(p)
     })
     
   output$scatterPlot <- renderPlot({

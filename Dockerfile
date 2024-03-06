@@ -2,6 +2,7 @@ FROM rocker/shiny
 
 RUN R -e "install.packages('shiny', repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('ggplot2', repos='http://cran.rstudio.com/')"
+RUN R -e "install.packages('plotly', repos='http://cran.rstudio.com/')"
 
 COPY CLOUD/shiny-customized.config /etc/shiny-server/shiny-server.conf
 
