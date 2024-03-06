@@ -39,7 +39,7 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   load("/srv/shiny-server/Data_for_shiny.RData")
-  plotdat <- get(input$whichplot)
+  plotdat <- reactive(get(input$whichplot))
   output$distPlot <- renderPlot({
         
 
