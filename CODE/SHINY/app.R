@@ -38,7 +38,7 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-
+  
   load("/srv/shiny-server/Data_for_shiny.RData")
   plotdat <- reactive(get(input$whichplot))
   
