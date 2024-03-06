@@ -9,4 +9,4 @@ plotdat_gro_us <-  dat %>%  filter(Field =="GDP_YOY",Country=="US") %>%   rename
 
 
 
-save(mydat,plotdat_inf_us,plotdat_inf_us,file="~/Github/Diamond/DATA/SHINY/Data_for_shiny.RData")
+save(mydat,plotdat_inf_us,plotdat_gro_us,file="~/Github/Diamond/DATA/SHINY/Data_for_shiny.RData")
