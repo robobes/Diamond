@@ -22,7 +22,9 @@ ui <- fluidPage(
                         "Number of bins:",
                         min = 1,
                         max = 50,
-                        value = 30)
+                        value = 30),
+            selectInput("whichplot",label = "Plot: ",choices = c("Inflation"="plotdat_inf_us",
+                                                                 "Growth"="plotdat_gro_us"))
         ),
 
         # Show a plot of the generated distribution
@@ -37,13 +39,21 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   load("/srv/shiny-server/Data_for_shiny.RData")
+  plotdat <- get(input$whichplot)
   output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- mydat$x
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
+        
 
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'coral3', border = 'white')
+        
+        ggplot(plotdat, aes(x = Date, y = Value)) +
+          geom_rect(aes(xmin = lag(Date), xmax = Date, ymin = -Inf, ymax = Inf, fill = Regime, alpha = 0.002)) +
+          geom_hline(aes(yintercept=0),col="maroon4")+
+          geom_line() +
+          scale_fill_manual(values = c("DISINFLATION" = "darkolivegreen3", "FIRE" = "firebrick3","ICE"="lightsteelblue3",
+                                       "REFLATION"="navajowhite"))+
+          labs(x = "Date", y = "Value", title = "Value Over Time by Regime") +
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                panel.background = element_blank())+
+          guides(alpha = FALSE,colour=FALSE)
     })
     
   output$scatterPlot <- renderPlot({
