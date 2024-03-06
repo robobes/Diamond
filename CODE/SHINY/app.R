@@ -24,10 +24,8 @@ ui <- fluidPage(
                         min = 1,
                         max = 50,
                         value = 30),
-            selectInput("whichplot",label = "Plot: ",choices = c("Inflation"="plotdat_inf_us",
-                                                                 "Growth"="plotdat_gro_us")),
-            selectInput("whichcolor",label = "Color: ",choices = c("Inflation"="colorpalette_inf",
-                                                                 "Growth"="colorpalette_gro"))
+            selectInput("whichplot",label = "Plot: ",choices = c("Inflation"="inf",
+                                                                 "Growth"="gro"))
         ),
 
         # Show a plot of the generated distribution
@@ -40,16 +38,16 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  
+  #load("~/Github/Diamond/DATA/SHINY/Data_for_shiny.RData")
   load("/srv/shiny-server/Data_for_shiny.RData")
-  plotdat <- reactive(get(input$whichplot))
-  colvalues <- reactive(get(input$whichcolor))
+  plotdat <-reactive(get(paste0("plotdat_",input$whichplot,"_us")))
+  colvalues <- reactive(get(paste0("colorpalette_",input$whichplot)))
   output$distPlot <- renderPlot({
         
 
         
         ggplot(plotdat(), aes(x = Date, y = Value)) +
-          geom_rect(aes(xmin = lag(Date), xmax = Date, ymin = -Inf, ymax = Inf, fill = Regime, alpha = 0.002)) +
+          geom_tile(aes(x = Date, y = (max(Value)+min(Value))/2, height = max(Value)-min(Value),width=180, fill = Regime, alpha = 0.002)) +
           geom_hline(aes(yintercept=0),col="maroon4")+
           geom_line() +
           scale_fill_manual(values = colvalues())+
