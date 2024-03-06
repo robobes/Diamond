@@ -25,7 +25,9 @@ ui <- fluidPage(
                         max = 50,
                         value = 30),
             selectInput("whichplot",label = "Plot: ",choices = c("Inflation"="plotdat_inf_us",
-                                                                 "Growth"="plotdat_gro_us"))
+                                                                 "Growth"="plotdat_gro_us")),
+            selectInput("whichcolor",label = "Color: ",choices = c("Inflation"="colorpalette_inf",
+                                                                 "Growth"="colorpalette_gro"))
         ),
 
         # Show a plot of the generated distribution
@@ -41,7 +43,7 @@ server <- function(input, output) {
   
   load("/srv/shiny-server/Data_for_shiny.RData")
   plotdat <- reactive(get(input$whichplot))
-  
+  colvalues <- reactive(get(input$wichcolor))
   output$distPlot <- renderPlot({
         
 
@@ -50,8 +52,7 @@ server <- function(input, output) {
           geom_rect(aes(xmin = lag(Date), xmax = Date, ymin = -Inf, ymax = Inf, fill = Regime, alpha = 0.002)) +
           geom_hline(aes(yintercept=0),col="maroon4")+
           geom_line() +
-          scale_fill_manual(values = c("DISINFLATION" = "darkolivegreen3", "FIRE" = "firebrick3","ICE"="lightsteelblue3",
-                                       "REFLATION"="navajowhite"))+
+          scale_fill_manual(values = colvalues())+
           labs(x = "Date", y = "Value", title = "Value Over Time by Regime") +
           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
                 panel.background = element_blank())+
