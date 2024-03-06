@@ -40,6 +40,7 @@ server <- function(input, output) {
 
   load("/srv/shiny-server/Data_for_shiny.RData")
   plotdat <- reactive(get(input$whichplot))
+  
   output$distPlot <- renderPlot({
         
 
