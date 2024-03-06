@@ -43,7 +43,7 @@ server <- function(input, output) {
   
   load("/srv/shiny-server/Data_for_shiny.RData")
   plotdat <- reactive(get(input$whichplot))
-  colvalues <- reactive(get(input$wichcolor))
+  colvalues <- reactive(get(input$whichcolor))
   output$distPlot <- renderPlot({
         
 
