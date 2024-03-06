@@ -39,13 +39,13 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  load("~/Github/Diamond/DATA/SHINY/Data_for_shiny.RData")
-  #load("/srv/shiny-server/Data_for_shiny.RData")
+  #load("~/Github/Diamond/DATA/SHINY/Data_for_shiny.RData")
+  load("/srv/shiny-server/Data_for_shiny.RData")
   plotdat <-reactive(get(paste0("plotdat_",input$whichplot,"_us")))
   colvalues <- reactive(get(paste0("colorpalette_",input$whichplot)))
   output$distPlot <- renderPlotly({
         p <- ggplot(plotdat(), aes(x = Date, y = Value)) +
-          geom_tile(aes(x = as.character(Date), y = (max(Value)+min(Value))/2, height = (max(Value)-min(Value)),width=90, fill = Regime,color=Regime), alpha = 0.5) +
+          geom_tile(aes(x = Date, y = (max(Value)+min(Value))/2, height = (max(Value)-min(Value)),width=90, fill = Regime,color=Regime), alpha = 0.5) +
           geom_hline(aes(yintercept=0),col="maroon4")+
           geom_line() +
           scale_fill_manual(values = colvalues())+
