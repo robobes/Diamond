@@ -46,7 +46,7 @@ server <- function(input, output) {
         
 
         
-        ggplot(plotdat, aes(x = Date, y = Value)) +
+        ggplot(plotdat(), aes(x = Date, y = Value)) +
           geom_rect(aes(xmin = lag(Date), xmax = Date, ymin = -Inf, ymax = Inf, fill = Regime, alpha = 0.002)) +
           geom_hline(aes(yintercept=0),col="maroon4")+
           geom_line() +
