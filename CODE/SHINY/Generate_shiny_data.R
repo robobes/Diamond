@@ -1,6 +1,6 @@
 library(tidyr)
 library(tidyverse)
-load("DATA/ANALYTICS/Output.RData")
+load("~/Github/Diamond/DATA/ANALYTICS/Output.RData")
 mydat<-tibble(x=runif(param),y=runif(param))
 
 dat <- read_csv("~/Github/Diamond/DATA/SHINY/regime_data.csv")
@@ -9,4 +9,4 @@ plotdat_gro_us <-  dat %>%  filter(Field =="GDP_YOY",Country=="US") %>%   rename
 
 
 
-save(plotdat_inf_us,plotdat_inf_us,file="~/Github/Diamond/DATA/SHINY/Data_for_shiny.RData")
+save(mydat,plotdat_inf_us,plotdat_inf_us,file="~/Github/Diamond/DATA/SHINY/Data_for_shiny.RData")
