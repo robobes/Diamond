@@ -1210,7 +1210,7 @@ df = zz_inf
 df["Country"]="US"
 df["Field"]="INF_YOY"
 df["Field2"]=None
-df = df.rename(columns={"Price":"Value"})
+df = df.rename(columns={"CPIAUCSL":"Value"})
 result = df 
 
 df = zz_growth
