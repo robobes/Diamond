@@ -1,13 +1,19 @@
-service: diamond-dash-app-engine-app
-runtime: python311
-
-basic_scaling:
-    max_instances: 2
-    idle_timeout: 10m
-
-resources:
-    cpu: 1
-    memory_gb: 1
-    disk_size_gb: 10
-
-entrypoint: gcloud -b 0.0.0.0:8080 main:server
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/dash-cloudrun:$COMMIT_SHA', '.']
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/shiny-cloudrun:$COMMIT_SHA']
+# Deploy container image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+  - 'run'
+  - 'deploy'
+  - 'shiny-cloudrun'
+  - '--image'
+  - 'gcr.io/$PROJECT_ID/shiny-cloudrun:$COMMIT_SHA'
+  - '--region'
+  - 'europe-central2'
+images:
+- 'gcr.io/$PROJECT_ID/shiny-cloudrun:$COMMIT_SHA'	

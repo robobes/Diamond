@@ -4,3 +4,4 @@ dash-html-components==2.0.0
 dash-table==5.0.0
 plotly==5.9.0
 pandas==1.5.3
+gunicorn==21.2.0
