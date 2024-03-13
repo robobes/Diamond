@@ -1,6 +1,6 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/$PROJECT_ID/dash-cloudrun:$COMMIT_SHA', '.']
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/dash-cloudrun:$COMMIT_SHA', './CLOUD/DASH']
 # Push the container image to Container Registry
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'gcr.io/$PROJECT_ID/dash-cloudrun:$COMMIT_SHA']
