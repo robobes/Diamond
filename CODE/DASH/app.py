@@ -8,9 +8,10 @@ from dash import Dash, html, dcc, callback, Output, Input
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+import os
 
-#df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder_unfiltered.csv')
 
+regime_dat =  pd.read_csv( os.path.join('DATA/SHINY/regime_data.csv') )
 regime_dat = pd.read_csv("C:/Users/PC/Documents/Github/Diamond/DATA/SHINY/regime_data.csv")
 
 regime_colors = {
@@ -31,7 +32,7 @@ regime_colors = {
     'Backwardation': "rgb(178, 34, 34)"
 }
 app = Dash(__name__)
-
+server = app.server
 
 
 
@@ -53,11 +54,7 @@ def update_graph(field,country):
     dff = dff[["Date","Value","Regime"]].dropna().reset_index(drop=True)
     fig= px.line(dff, x="Date", y="Value")
     fig.update_traces(line_color='#000000')
-    
-    
-    
 
-    
     ply_shapes = {}
     for i in range(1, len(dff)):
         ply_shapes['shape_' + str(i)]=go.layout.Shape(type="rect",
@@ -77,12 +74,9 @@ def update_graph(field,country):
     )
     fig.update_xaxes(showgrid=False)
     fig.update_yaxes(showgrid=False)
-    
-    
-    
-    
+
     return fig
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run_server(host='0.0.0.0', port=8080, debug=True, use_reloader=False)
