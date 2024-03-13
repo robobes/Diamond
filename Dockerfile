@@ -16,5 +16,5 @@ COPY DATA/SHINY/regime_data.csv /usr/src/app/regime_data.csv
 RUN useradd -m appUser
 USER appUser
 
-# Run locally on port 8050
-CMD gunicorn --bind 0.0.0.0:8050 app:server
+
+CMD exec gunicorn --bind :$PORT --log-level info --workers 1 --threads 8 --timeout 0 app:server
