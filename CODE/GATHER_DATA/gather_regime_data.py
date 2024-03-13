@@ -1235,6 +1235,7 @@ df = df.rename(columns={"Level":"YC_level","Slope":"YC_slope"})
 df = pd.melt(df,value_vars=["YC_level","YC_slope"],id_vars="Regime",ignore_index=False,value_name="Value")
 df = df.rename(columns={"variable":"Field2"})
 df["Field"]="Yield_Curve"
+df["Country"]="US"
 result = pd.concat([result,df])
 
 df = zz_cli_us
@@ -1283,7 +1284,7 @@ df["Value"]=0
 df["Field2"]=None
 df = df.rename(columns={"commodity_curve":"Regime"})
 result = pd.concat([result,df])
-
+result.index.name="Date"
 
 #### save the data
 
