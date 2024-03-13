@@ -1,35 +1,20 @@
-FROM rocker/shiny
+FROM python:3.11-slim
 
+# set working directory in container
+WORKDIR /usr/src/app
 
-RUN apt-get update && apt-get install -y \
-cron \
-gdebi-core \
-libcurl4-openssl-dev \
-libfreetype6-dev \
-libpq-dev \
-libssl-dev \
-libxml2-dev \
-openjdk-8-jdk \
-r-base \
-wget
+# Copy and install packages
+COPY CLOUD/DASH/requirements.txt /
+RUN pip install --upgrade pip
+RUN pip install -r CLOUD/DASH/requirements.txt
 
+# Copy app folder to app folder in container
+COPY CODE/DASH /usr/src/app/
+COPY DATA/SHINY/regime_data.csv /usr/src/app/regime_data.csv
 
+# Changing to non-root user
+RUN useradd -m appUser
+USER appUser
 
-
-RUN R -e "install.packages('shiny', repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('ggplot2', repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('plotly', repos='http://cran.rstudio.com/')"
-
-COPY CLOUD/shiny-customized.config /etc/shiny-server/shiny-server.conf
-
-COPY CODE/SHINY/app.R /srv/shiny-server/app.R
-
-COPY DATA/SHINY/Data_for_shiny.RData /srv/shiny-server/Data_for_shiny.RData
-
-EXPOSE 8080
-
-USER shiny
-
-# avoid s6 initialization
-# see https://github.com/rocker-org/shiny/issues/79
-CMD ["/usr/bin/shiny-server"]
+# Run locally on port 8050
+CMD gunicorn --bind 0.0.0.0:8050 app:server
