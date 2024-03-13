@@ -11,8 +11,8 @@ import pandas as pd
 import os
 
 
-#regime_dat =  pd.read_csv( os.path.join('regime_data.csv') )
-regime_dat = pd.read_csv("C:/Users/PC/Documents/Github/Diamond/DATA/SHINY/regime_data.csv")
+regime_dat =  pd.read_csv( os.path.join('regime_data.csv') )
+#regime_dat = pd.read_csv("C:/Users/PC/Documents/Github/Diamond/DATA/SHINY/regime_data.csv")
 
 regime_colors = {
     "DISINFLATION": "rgb(85, 107, 47)",
@@ -43,11 +43,6 @@ app.layout = html.Div([
     dcc.Graph(id='graph-content')
 ])
 
-
-
-
-
-
 @callback(
     [Output("dropdown-selection-field","options"),
     Output("dropdown-selection-field","disabled")],
@@ -59,15 +54,6 @@ def second_dropdown(country):
         return opts,False
     else:
         return [],True
-
-
-
-
-
-
-
-
-
 
 
 
@@ -108,5 +94,5 @@ def update_graph(field,country):
         return go.Figure()
 
 if __name__ == '__main__':
-    #app.run_server(host='0.0.0.0', port=8080, debug=True, use_reloader=False)
-    app.run(debug=True)
+    app.run_server(host='0.0.0.0', port=8080, debug=True, use_reloader=False)
+    #app.run(debug=True)
