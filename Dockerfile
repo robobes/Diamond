@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 # Copy and install packages
 COPY CLOUD/DASH/requirements.txt /
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install -r /requirements.txt
 
 # Copy app folder to app folder in container
 COPY CODE/DASH /usr/src/app/
