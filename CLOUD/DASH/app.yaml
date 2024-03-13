@@ -10,7 +10,7 @@ steps:
   args:
   - 'run'
   - 'deploy'
-  - 'shiny-cloudrun'
+  - 'dash-cloudrun'
   - '--image'
   - 'gcr.io/$PROJECT_ID/dash-cloudrun:$COMMIT_SHA'
   - '--region'
