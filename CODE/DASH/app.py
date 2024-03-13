@@ -11,8 +11,8 @@ import pandas as pd
 import os
 
 
-regime_dat =  pd.read_csv( os.path.join('DATA/SHINY/regime_data.csv') )
-regime_dat = pd.read_csv("C:/Users/PC/Documents/Github/Diamond/DATA/SHINY/regime_data.csv")
+regime_dat =  pd.read_csv( os.path.join('regime_data.csv') )
+#regime_dat = pd.read_csv("C:/Users/PC/Documents/Github/Diamond/DATA/SHINY/regime_data.csv")
 
 regime_colors = {
     "DISINFLATION": "rgb(85, 107, 47)",
