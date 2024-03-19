@@ -4,15 +4,18 @@ Created on Tue Mar 12 11:26:23 2024
 
 @author: PC
 """
-from dash import Dash, html, dcc, callback, Output, Input
+from dash import Dash, html, dcc, callback, Output, Input, State
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import os
+import dash_bootstrap_components as dbc
+from dash_bootstrap_components._components.Container import Container
 
 
-regime_dat =  pd.read_csv( os.path.join('regime_data.csv') )
-#regime_dat = pd.read_csv("C:/Users/PC/Documents/Github/Diamond/DATA/SHINY/regime_data.csv")
+#regime_dat =  pd.read_csv( os.path.join('regime_data.csv') )
+regime_dat = pd.read_csv("C:/Users/PC/Documents/Github/Diamond/DATA/SHINY/regime_data.csv")
+BS = "https://bootswatch.com/5/lumen/bootstrap.css"
 
 regime_colors = {
     "DISINFLATION": "rgb(85, 107, 47)",
@@ -31,13 +34,51 @@ regime_colors = {
     'Contango': "rgb(85, 107, 47)",
     'Backwardation': "rgb(178, 34, 34)"
 }
-app = Dash(__name__)
+app = Dash(__name__,external_stylesheets=[BS])
 server = app.server
 
+navbar = dbc.Navbar(
+    dbc.Container(
+        [
+            html.A(
+                # Use row and col to control vertical alignment of logo / brand
+                dbc.Row(
+                    [
+                        dbc.Col(dbc.NavbarBrand("Navbar", className="ms-2")),
+                    ],
+                    align="center",
+                    className="g-0",
+                ),
+                href="https://github.com/robobes/Diamond",
+                style={"textDecoration": "none"},
+            ),
+            dbc.NavbarToggler(id="navbar-toggler", n_clicks=0),
+            dbc.Collapse(
+                id="navbar-collapse",
+                is_open=False,
+                navbar=True,
+            ),
+        ]
+    ),
+    color="dark",
+    dark=True,
+)
 
+
+# add callback for toggling the collapse on small screens
+@app.callback(
+    Output("navbar-collapse", "is_open"),
+    [Input("navbar-toggler", "n_clicks")],
+    [State("navbar-collapse", "is_open")],
+)
+def toggle_navbar_collapse(n, is_open):
+    if n:
+        return not is_open
+    return is_open
 
 app.layout = html.Div([
-    html.H1(children='Title of Dash App1', style={'textAlign':'center'}),
+    navbar,
+    html.H1(children='Title of Dash App', style={'textAlign':'center'}),
     dcc.Dropdown(regime_dat.Country.unique(), None, id='dropdown-selection-country'),
     dcc.Dropdown([], None,disabled=True, id='dropdown-selection-field'),
     dcc.Graph(id='graph-content')
@@ -94,5 +135,5 @@ def update_graph(field,country):
         return go.Figure()
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port=8080, debug=True, use_reloader=False)
-    #app.run(debug=True)
+    #app.run_server(host='0.0.0.0', port=8080, debug=True, use_reloader=False)
+    app.run(debug=True)
