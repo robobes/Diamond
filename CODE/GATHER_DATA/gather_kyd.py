@@ -38,9 +38,6 @@ for option in options:
 
 
 
-
-
-
 url_list=open("./CODE/GATHER_DATA/kyd_urls.txt").readlines()
 count = 0
 for url in url_list:
@@ -49,37 +46,82 @@ for url in url_list:
 
 
 
-res = pd.DataFrame(columns=['Ticker', 'Name', 'Date' , 'Value'])
 
-driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
+res = pd.DataFrame(columns=['Ticker', 'Name', 'Date', 'Value'])
+failed_urls = []  # Track failed URLs
 
-for url in url_list:
-    driver.get(url)
-    time.sleep(3)
-    whichchart = driver.execute_script('return Highcharts.charts.length')
-    dates = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(x => x.series).map(x => x.xData)[0].map(x => new Date(x).toISOString())')
-    values = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(x => x.series).map(x => x.yData)[0]')
-    name=driver.find_element(by=By.XPATH,value='//h2').text
-    ticker=driver.find_element(by=By.XPATH,value='//*[@id="printableArea"]/div/div[2]/div[2]/table/tbody/tr[1]/td[2]').text
-    df = pd.DataFrame({'Ticker':ticker, 'Name':name, 'Date': dates, 'Value': values })
-    if res.shape[0] == 0:
-        res=df
-    else:
-        res=pd.concat([res,df])
+
+try:
+    driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
     
-driver.quit()
+    for url in url_list:
+        try:
+            driver.get(url)
+            max_attempts = 3
+            success = False
+            
+            for attempt in range(max_attempts):
+                time.sleep(3)
+                try:
+                    whichchart = driver.execute_script('return Highcharts.charts.length')
+                    if whichchart > 0:
+                        dates = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(x => x.series).map(x => x.xData)[0].map(x => new Date(x).toISOString())')
+                        values = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(x => x.series).map(x => x.yData)[0]')
+                        name = driver.find_element(by=By.XPATH,value='//h2').text
+                        ticker = driver.find_element(by=By.XPATH,value='//*[@id="printableArea"]/div/div[2]/div[2]/table/tbody/tr[1]/td[2]').text
+                        
+                        df = pd.DataFrame({'Ticker':ticker, 'Name':name, 'Date': dates, 'Value': values })
+                        if res.shape[0] == 0:
+                            res = df
+                        else:
+                            res = pd.concat([res,df])
+                        success = True
+                        print(f"Successfully processed: {url}")
+                        break
+                except Exception as e:
+                    if attempt == max_attempts - 1:
+                        raise e  # Re-raise on last attempt
+                    continue
+                    
+            if not success:
+                raise Exception("Max attempts reached without success")
+                
+        except Exception as e:
+            failed_urls.append(url)
+            print(f"Failed to process URL: {url}")
+            print(f"Error: {str(e)}")
+            continue
 
-res['Date']=pd.to_datetime(res['Date']).dt.date
-res["update"]=2
+finally:
+    driver.quit()
+    
+# Only proceed with database update if we have some successful results
+if res.shape[0] > 0:
+    try:
+        res['Date'] = pd.to_datetime(res['Date']).dt.date
+        res["update"] = 2
 
+        dat = ds.dataset("./DATA/DATABASE/KYD", partitioning=["Ticker"]).to_table().to_pandas()
+        dat["update"] = 1
 
-dat=ds.dataset("./DATA/DATABASE/KYD",partitioning=["Ticker"]).to_table().to_pandas()
-dat["update"]=1
+        dataf = pd.concat([res,dat], ignore_index=True).sort_values('update', ascending=False).drop_duplicates(["Ticker","Date"]).drop(["update"],axis=1)
+        dataf = dataf.reset_index().drop("index",axis=1)
 
-dataf=pd.concat([res,dat],ignore_index=True).sort_values('update', ascending=False).drop_duplicates(["Ticker","Date"]).drop(["update"],axis=1)
-dataf.reset_index().drop("index",axis=1)
-
-table = pa.Table.from_pandas(dataf)
-ds.write_dataset(table, "./DATA/DATABASE/KYD",
-                 format="parquet", partitioning=ds.partitioning(
-                    pa.schema([table.schema.field("Ticker")])),existing_data_behavior="overwrite_or_ignore")
+        table = pa.Table.from_pandas(dataf)
+        ds.write_dataset(table, "./DATA/DATABASE/KYD",
+                        format="parquet", 
+                        partitioning=ds.partitioning(pa.schema([table.schema.field("Ticker")])),
+                        existing_data_behavior="overwrite_or_ignore")
+        
+        print(f"Database successfully updated with {res.shape[0]} new records")
+        if failed_urls:
+            print(f"Failed URLs ({len(failed_urls)}):")
+            for url in failed_urls:
+                print(f"  - {url}")
+    
+    except Exception as e:
+        print("Error during database update:")
+        print(str(e))
+        raise
+else:
+    print("No data was collected successfully. Database not updated.")
