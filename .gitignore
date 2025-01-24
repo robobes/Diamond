@@ -4,3 +4,9 @@ CODE/.DS_Store
 .DS_Store
 DATA/.DS_Store
 DATA/DATABASE/.DS_Store
+
+# macOS system files
+.DS_Store
+**/.DS_Store
+._.DS_Store
+**/._.DS_Store
