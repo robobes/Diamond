@@ -2,8 +2,9 @@ name: kyd_update
 
 on:
   schedule:
-    - cron: '0 6 * * 1-5' # Every weekday at 09.00 Istanbul
-    - cron: '7 10 * * 1-5' # and back-up at 13.30
+    - cron: '15 7 * * 1-5' # Every weekday at 09.00 Istanbul
+    - cron: '0 21 * * 1-5'  # Every weekday at midnight Istanbul time
+
 
   workflow_dispatch:
 
