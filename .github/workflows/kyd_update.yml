@@ -46,5 +46,5 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git add .
-          git commit -m "Results from tefas_update" || echo "No changes to commit"
+          git commit -m "Results from kyd_update" || echo "No changes to commit"
           git push origin || echo "No changes to commit"-
