@@ -29,7 +29,7 @@ chrome_service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).in
 
 
 chrome_options = Options()
-chrome_options.binary_location = "/usr/bin/chromium-browser" # or /usr/bin/chromium
+chrome_options.binary_location = "/usr/bin/chromium" # or /usr/bin/chromium
 options = [
     "--headless",
     "--disable-gpu",
