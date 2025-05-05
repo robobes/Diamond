@@ -25,7 +25,7 @@ import pyarrow as pa
 import pyarrow.dataset as ds
 
 #chrome_service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
-chrome_service = Service("/usr/bin/chromium-browser/chromedriver")
+chrome_service = Service("/usr/lib/chromium-browser/chromedriver")
 
 
 chrome_options = Options()
