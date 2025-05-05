@@ -24,12 +24,12 @@ import time
 import pyarrow as pa
 import pyarrow.dataset as ds
 
-chrome_service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
-
+#chrome_service = Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install())
+chrome_service = Service("/usr/bin/chromium-browser/chromedriver")
 
 
 chrome_options = Options()
-chrome_options.binary_location = "/usr/bin/chromium" # or /usr/bin/chromium
+chrome_options.binary_location = "/usr/bin/chromium-browser" # or /usr/bin/chromium
 options = [
     "--headless",
     "--disable-gpu",
