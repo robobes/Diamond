@@ -13,8 +13,11 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 
 
-
-
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 import pandas as pd
 import time
@@ -76,7 +79,7 @@ try:
                         else:
                             res = pd.concat([res,df])
                         success = True
-                        print(f"Successfully processed: {url}")
+                        logging.info(f"Successfully processed: {url}")
                         break
                 except Exception as e:
                     if attempt == max_attempts - 1:
@@ -88,8 +91,8 @@ try:
                 
         except Exception as e:
             failed_urls.append(url)
-            print(f"Failed to process URL: {url}")
-            print(f"Error: {str(e)}")
+            logging.error(f"Failed to process URL: {url}")
+            logging.error(f"Error: {str(e)}")
             continue
 
 finally:
@@ -115,13 +118,13 @@ if res.shape[0] > 0:
         
         print(f"Database successfully updated with {res.shape[0]} new records")
         if failed_urls:
-            print(f"Failed URLs ({len(failed_urls)}):")
+            logging.warning(f"Failed URLs ({len(failed_urls)}):")
             for url in failed_urls:
-                print(f"  - {url}")
+                logging.warning(f"  - {url}")
     
     except Exception as e:
-        print("Error during database update:")
-        print(str(e))
+        logging.error("Error during database update:")
+        logging.error(str(e))
         raise
 else:
-    print("No data was collected successfully. Database not updated.")
+    logging.warning("No data was collected successfully. Database not updated.")
