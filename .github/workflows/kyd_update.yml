@@ -32,6 +32,8 @@ jobs:
 
       - name: Install a new Chromium
         run: sudo apt install -y chromium-browser
+      - name: Install chromium driver
+        run: sudo apt install -y chromium-chromedriver
 
       - name: install python packages
         run: |
