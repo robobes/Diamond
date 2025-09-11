@@ -71,8 +71,8 @@ try:
                 try:
                     whichchart = driver.execute_script('return Highcharts.charts.length')
                     if whichchart > 0:
-                        dates = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(x => x.series).map(x => x.xData)[0].map(x => new Date(x).toISOString())')
-                        values = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(x => x.series).map(x => x.yData)[0]')
+                        dates = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(point => new Date(point.x).toISOString())')
+                        values = driver.execute_script('return Highcharts.charts['+str(whichchart-1)+'].series[0].data.map(point => point.y)')
                         name = driver.find_element(by=By.XPATH,value='//h2').text
                         ticker = driver.find_element(by=By.XPATH,value='//*[@id="printableArea"]/div/div[2]/div[2]/table/tbody/tr[1]/td[2]').text
                         
