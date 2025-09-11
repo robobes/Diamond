@@ -47,7 +47,7 @@ for option in options:
 url_list=open("./CODE/GATHER_DATA/kyd_urls.txt").readlines()
 count = 0
 for url in url_list:
-    url_list[count] = url[:-1]
+    url_list[count] = url.strip()
     count += 1
 
 
